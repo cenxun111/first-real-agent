@@ -51,6 +51,21 @@
         </div>
     </main>
 
+    <!-- Approval Modal (Glassmorphism) -->
+    <div id="approvalModal" class="modal-overlay hidden">
+        <div class="glass-modal">
+            <h2>⚠️ Approval Required</h2>
+            <p id="approvalMessage">The agent wants to execute <strong id="approvalToolName"></strong>.</p>
+            <div class="approval-args">
+                <pre><code id="approvalArgs"></code></pre>
+            </div>
+            <div class="modal-actions">
+                <button id="rejectBtn" class="btn btn-danger">Reject</button>
+                <button id="approveBtn" class="btn btn-success">Approve</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Marked JS for parsing markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="/static/script.js"></script>

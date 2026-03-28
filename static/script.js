@@ -101,6 +101,8 @@ async function sendMessage() {
         if (data.status === 'success') {
             const agentMsg = createMessageElement(data.response, 'agent', true);
             chatFeed.appendChild(agentMsg);
+        } else if (data.status === 'PAUSED_FOR_APPROVAL') {
+            showApprovalModal(data.pending_tool);
         } else {
             const errorMsg = createMessageElement("Sorry, an error occurred processing your request.", 'system');
             chatFeed.appendChild(errorMsg);
@@ -132,3 +134,63 @@ messageInput.addEventListener('keydown', function(e) {
         sendMessage();
     }
 });
+
+// --- Approval Logic ---
+const approvalModal = document.getElementById('approvalModal');
+const approveBtn = document.getElementById('approveBtn');
+const rejectBtn = document.getElementById('rejectBtn');
+const approvalToolName = document.getElementById('approvalToolName');
+const approvalArgs = document.getElementById('approvalArgs');
+
+function showApprovalModal(pendingTool) {
+    if (!pendingTool) return;
+    approvalToolName.textContent = pendingTool.name;
+    approvalArgs.textContent = JSON.stringify(pendingTool.args, null, 2);
+    approvalModal.classList.remove('hidden');
+}
+
+function hideApprovalModal() {
+    approvalModal.classList.add('hidden');
+}
+
+async function handleApproval(action) {
+    hideApprovalModal();
+    showTypingIndicator();
+    
+    try {
+        const response = await fetch('/api/approve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                session_id: SESSION_ID,
+                action: action
+            })
+        });
+        
+        const data = await response.json();
+        removeTypingIndicator();
+        
+        if (data.status === 'success') {
+            const agentMsg = createMessageElement(data.response, 'agent', true);
+            chatFeed.appendChild(agentMsg);
+        } else if (data.status === 'PAUSED_FOR_APPROVAL') {
+            showApprovalModal(data.pending_tool);
+        } else {
+            const errorMsg = createMessageElement("Sorry, an error occurred processing your request.", 'system');
+            chatFeed.appendChild(errorMsg);
+            console.error(data);
+        }
+    } catch (error) {
+        removeTypingIndicator();
+        const errorMsg = createMessageElement("Network error. Could not reach the server.", 'system');
+        chatFeed.appendChild(errorMsg);
+        console.error("Error calling approve API:", error);
+    }
+    
+    scrollToBottom();
+}
+
+if(approveBtn) approveBtn.addEventListener('click', () => handleApproval('approve'));
+if(rejectBtn) rejectBtn.addEventListener('click', () => handleApproval('reject'));
